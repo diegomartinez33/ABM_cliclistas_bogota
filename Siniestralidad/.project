@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>Siniestralidad</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.xtext.ui.shared.xtextBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
+		<nature>msi.gama.application.gamaNature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>external/MVI2020.shp</name>
+			<type>1</type>
+			<location>C:/Users/USER/Dropbox (Uniandes)/Safer_Complex_Systems_Ciclorutas/Analysis/Mallas 2019_2020/MVI2020/MVI2020.shp</location>
+		</link>
+		<link>
+			<name>external/ZAT.shp</name>
+			<type>1</type>
+			<location>C:/Users/USER/Dropbox (Uniandes)/Safer_Complex_Systems_Ciclorutas/Analysis/Mallas 2019_2020/ZONAS/ZAT.shp</location>
+		</link>
+	</linkedResources>
+</projectDescription>
