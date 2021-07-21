@@ -11,9 +11,9 @@ model siniestros
 /* Insert your model definition here */
 
 global{
-	file shapefile_mvi<-file("C:/Users/USER/Dropbox (Uniandes)/Safer_Complex_Systems_Ciclorutas/Analysis/Mallas 2019_2020/MVI2020/MVI2020.shp");
-	file shapefile_zat<-file("C:/Users/USER/Dropbox (Uniandes)/Safer_Complex_Systems_Ciclorutas/Analysis/Mallas 2019_2020/ZONAS/ZAT.shp");
-	int n_agentes<- 1000;
+	file shapefile_mvi<-file("../includes/model_input/MVI2020/MVI2020.shp");
+	file shapefile_zat<-file("../includes/model_input/ZONAS/ZAT.shp");
+	int n_agentes<- 10;
 	geometry shape <- envelope(shapefile_zat);
 	float step <- 10 #mn;
 	init{
@@ -33,7 +33,7 @@ global{
 species persona{
 	rgb color<- #orange;
 	aspect base {
-	draw circle(2) color: color border: #black; /*Dibujar la figura de los agentes*/
+	draw circle(200) color: color border: #black; /*Dibujar la figura de los agentes*/
     }
 }
 
