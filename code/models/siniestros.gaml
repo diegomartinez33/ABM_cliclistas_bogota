@@ -15,14 +15,14 @@ global{
 	file shapefile_zat<-file("../includes/model_input/ZONAS/ZAT.shp");
 	int n_agentes<- 10;
 	geometry shape <- envelope(shapefile_zat);
-	float step <- 10 #mn;
-	date starting_date <- date("2021-07-21-00-00-00");
+	float step <- 1 #mn;
+	date starting_date <- date("2021-07-21-06-00-00");
     int min_work_start <- 6;
-    int max_work_start <- 8;
+    int max_work_start <- 7;
     int min_work_end <- 16; 
     int max_work_end <- 20; 
-    float min_speed <- 20.0 #km / #h;
-    float max_speed <- 50.0 #km / #h; 
+    float min_speed <- 1.0 #km / #h;
+    float max_speed <- 5.0 #km / #h; 
     graph the_graph;
 	init{
 		/*Inicialización de los segmentos */
@@ -89,7 +89,7 @@ species segmento{
 species zat{
 	rgb color<- #lightskyblue;
 	aspect base {
-	draw shape color: color border: #black;
+	draw shape color: color border: #green;
 	}
 }
 
