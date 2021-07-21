@@ -1,5 +1,5 @@
 # Specify filepatterns you want git to ignore.
-./.cache/
-./.metadata/
+.cache/
+.metadata/
 .built_in_models_1626361082931
 .gama_application_workspace
