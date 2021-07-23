@@ -5,7 +5,6 @@
 * Tags: 
 */
 
-
 model siniestros
 
 /* Insert your model definition here */
@@ -13,7 +12,10 @@ model siniestros
 global{
 	file shapefile_mvi<-file("../includes/model_input/MVI2020/MVI2020.shp");
 	file shapefile_zat<-file("../includes/model_input/ZONAS/ZAT.shp");
-	int n_agentes<- 10;
+	matrix od_zats<-matrix("../includes/model_input/matriz_od.csv");
+	matrix zat_origen<-matrix("../includes/model_input/dist_zat_origen.csv");
+	
+	int n_agentes<- 100;
 	geometry shape <- envelope(shapefile_zat);
 	float step <- 1 #mn;
 	date starting_date <- date("2021-07-21-06-00-00");
@@ -26,9 +28,10 @@ global{
     graph the_graph;
 	init{
 		/*Inicialización de los segmentos */
+        
+        write od_zats.rows;
 		create segmento from:shapefile_mvi;
 		the_graph <- as_edge_graph(segmento);
-		
 		create zat from:shapefile_zat;
 		
 		/*Inicialización de los agentes*/
@@ -38,8 +41,28 @@ global{
 			speed <- rnd(min_speed, max_speed);
 		    start_work <- rnd (min_work_start, max_work_start);
 		    end_work <- rnd(min_work_end, max_work_end);
-		    living_place <- any_location_in (one_of (lista_zats)) ;
-		    working_place <- any_location_in (one_of (lista_zats));
+		    /*Asignando ZAT de origen*/
+		    float prob_origen<-rnd(1.0);
+		    loop i from: 0 to: length(zat_origen)-1{
+		    	float prob_i<-zat_origen[4,i];
+		    	if i = 0{
+		    		if prob_origen<=float(zat_origen[4,i]){
+		    			origen <- any_location_in (one_of (lista_zats[])) ;
+		    		}
+		    	}else{
+		    		if prob_origen>float(zat_origen[4,i-1]) and prob_origen<=float(zat_origen[4,i]) {
+		    			origen <- any_location_in (one_of (lista_zats[])) ;
+		    		}
+		    	}
+		    	
+		    
+		    }
+		    
+		    /*Asignando destino basado en ZAT de origen*/
+		    float prob_destino<-rnd(1.0);
+		    
+		    
+		    destino <- any_location_in (one_of (lista_zats));
 		    objective <- "resting";
 			location <- any_location_in (one_of (lista_segmentos));
 		}
@@ -50,8 +73,8 @@ global{
 /*Definición de la clase persona y sus propiedades*/
 species persona skills: [moving]{
 	rgb color<- #orange;
-	point living_place <- nil ;
-    point working_place <- nil ;
+	point origen <- nil ;
+    point destino <- nil ;
     int start_work ;
     int end_work  ;
     string objective ; 
@@ -59,12 +82,12 @@ species persona skills: [moving]{
         
     reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
     objective <- "working" ;
-    the_target <- any_location_in (working_place);
+    the_target <- any_location_in (destino);
     }
         
     reflex time_to_go_home when: current_date.hour = end_work and objective = "working"{
     objective <- "resting" ;
-    the_target <- any_location_in (living_place); 
+    the_target <- any_location_in (origen); 
     } 
      
     reflex move when: the_target != nil {
