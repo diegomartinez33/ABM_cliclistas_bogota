@@ -29,8 +29,9 @@ global{
 	init{
 		/*Inicialización de las ZATs, los segmentos y la malla*/
 		create segmento from:shapefile_mvi;
-		map<segmento,float> pesos_segmentos<-segmento as_map(each::(each.indice_seguridad)); //Calculando los pesos para cada segmento con base en el índice de seguridad
-		the_graph <- as_edge_graph(segmento) with_weights pesos_segmentos;	//Creando la red con pesos
+		map<segmento,float> pesos_segmentos_seguridad<-segmento as_map(each::(each.indice_seguridad)); //Calculando los pesos para cada segmento con base en el índice de seguridad
+		map<segmento,float> pesos_segmentos_siniestros<-segmento as_map(each::(each.prob_siniestro));
+		the_graph <- as_edge_graph(segmento) with_weights pesos_segmentos_seguridad;	//Creando la red con pesos
 		create zat from:shapefile_zat with: [nombre::string(read("ZAT"))];
 			
 		/*Inicialización de los agentes*/
@@ -94,8 +95,8 @@ global{
 	}
 
 	reflex actualizar_malla{
-		map<segmento,float> pesos_segmentos<-segmento as_map(each::(each.indice_seguridad)); //Calculando los pesos para cada segmento con base en el índice de seguridad
-		the_graph <- as_edge_graph(segmento) with_weights pesos_segmentos;	//Creando la red con pesos
+		map<segmento,float> pesos_segmentos_seguridad<-segmento as_map(each::(each.indice_seguridad)); //Calculando los pesos para cada segmento con base en el índice de seguridad
+		the_graph <- as_edge_graph(segmento) with_weights pesos_segmentos_seguridad;	//Creando la red con pesos
 	}
 	
 }
