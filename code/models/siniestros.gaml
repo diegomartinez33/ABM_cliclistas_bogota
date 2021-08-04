@@ -15,14 +15,14 @@ global{
 	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
 	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
 	
-	int n_agentes<- 10;
+	int n_agentes<- 50;
 	geometry shape <- envelope(shapefile_zat);
-	float step <- 10 #mn;
+	float step <- 24 #h;
 	date starting_date <- date("2021-08-03-00-00-00");
-    int min_work_start <- 5;
-    int max_work_start <- 7;
-    int min_work_end <- 17; 
-    int max_work_end <- 19; 
+    float min_work_start <- 3#h;
+    float max_work_start <- 6#h;
+    float min_work_end <- 14#h; 
+    float max_work_end <- 17#h; 
     float min_speed <- 1.0 #km / #h; // TODO: investigar velocidad de bicicleta reportada
     float max_speed <- 5.0 #km / #h; 
     graph the_graph;
@@ -80,6 +80,7 @@ global{
 		    	}
 		    }
 		    
+		    
 		    /*Asignando destino basado en ZAT de origen*/
 		    float prob_destino<-rnd(1.0);
 		    loop i from: 0 to: od_zats.rows-1{
@@ -105,23 +106,38 @@ global{
 		    	}	    		    	
 		    }
 		    location <- origen;
+		    //write "Agente:"+name+", zat_origen:"+zat_origen.nombre+", zat destino:"+zat_destino.nombre;
+		    write "Agente:"+name+", hora de inicio:"+start_work+", hora de fin:"+end_work;
 		}
+		write "Termino inicializada de los agentes";
 	}
 
 	reflex actualizar_malla{
+		write time;
 		map<segmento,float> pesos_segmentos_estres<-segmento as_map(each::(each.indice_estres)); //Calculando los pesos para cada segmento con base en el índice de seguridad
 		the_graph_with_stress <- as_edge_graph(segmento) with_weights pesos_segmentos_estres;	//Creando la red con pesos
-		write current_date;
 	}
 	
-	/*
-	//The simulation stops at 24:00
-	reflex stopSimulation when: cycle = 1441{
-		write "Total simulation time: " + (machine_time - simulationStartTime)/1000/60 + " min";
+	reflex detener_simulacion when: cycle>25{ //Método para detener la simulación
 		do pause;
+	} 
+	
+	reflex save_result{
+		int total_siniestros<-0;
+		list<segmento> segmentos<- segmento;
+		loop i over: segmentos{
+			ask i{
+				total_siniestros <- total_siniestros + num_siniestros;
+			}
+		}
+		write "Total de siniestros"+total_siniestros;
+		
+	    save ("cycle: "+ cycle +
+	    	"; siniestros_generados:"+ total_siniestros
+		) 
+	      to: "results_prueba2.txt" type: "text" rewrite: (cycle = 0) ? true : false;
 	}
-	* 
-	*/
+	
 	
 }
 
@@ -134,20 +150,22 @@ species persona skills: [moving]{
 	zat zat_origen;
 	zat zat_destino;
     point destino <- nil ;
-    int start_work ;
-    int end_work  ;
+    float start_work max: max_work_start;
+    float end_work  max: max_work_end;
     string objective ; 
     point the_target <- nil ;
     float riesgo_indiv;
     
     // reflex para indicar el momento de ir a trabajar segun la hora
     reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
+    	write "Hora de trabajar al objetivo:"+the_target;
 	    objective <- "working" ;
 	    the_target <- any_location_in (zat_destino);
     }
     
     // reflex para indicar el momento de volver a casa segun la hora    
     reflex time_to_go_home when: current_date.hour = end_work and objective = "working"{
+    	write "Hora de volver al objetivo:"+the_target;
 	    objective <- "resting" ;
 	    the_target <- origen; 
     } 
@@ -159,35 +177,39 @@ species persona skills: [moving]{
     	                      
     	if (tipo_ruta="Rapida"){
     		selected_graph <- the_graph;
+    		write "aca";
     	}
     	else {
     		selected_graph <- the_graph_with_stress;
+    		write "aca2";
     	}
-	    	path path_followed <- goto(target: the_target, on:selected_graph, return_path: true);
-	    	list<geometry> segments <- path_followed.segments;
-	    	float aux_rnd_siniestro;
-	    	
-	    	loop line over: segments {
-	    		aux_rnd_siniestro <- rnd(1.0);
-		        ask segmento(path_followed agent_from_geometry line) {
-		        	// Se cambia el nivel de estres del segmento si ocurre un siniestro 
-		        	if (aux_rnd_siniestro>prob_siniestro){ 
-			        	indice_estres<-indice_estres+0.01;
-			        	num_siniestros<-num_siniestros+1; //aumenta en 1 el No de siniestros
-			        	
-			        	//Disminuye en 0.1 el nivel de riesgo de la persona
-			        	// NO SE SI ES LA MEJOR FORMA DE DISMINUIR EL RIESGO 
-			        	// TODO: ¡¡¡¡¡¡¡¡¡¡¡¡¡REVISAR!!!!!!!!!!!!!!!!!!!!
-			        	//
-			        	myself.prob_riesgo<-myself.prob_riesgo-0.1;
-		        	}
-		        }
-		    }
+    	path path_followed <- goto(target: the_target, on:selected_graph, return_path: true);
+    	list<geometry> segments <- path_followed.segments;
+    	float aux_rnd_siniestro;
+    	
+    	loop line over: segments {
+    		write line;
+    		aux_rnd_siniestro <- rnd(1.0);
+	        ask segmento(path_followed agent_from_geometry line) {
+	        	// Se cambia el nivel de estres del segmento si ocurre un siniestro 
+	        	write "Prob aleatoria:"+aux_rnd_siniestro+", prob segmento:"+prob_siniestro;
+	        	if (aux_rnd_siniestro>prob_siniestro){ 
+		        	indice_estres<-indice_estres+0.01;
+		        	num_siniestros<-num_siniestros+1; //aumenta en 1 el No de siniestros
+		        	write "sucedio un siniestro";
+		        	
+		        	//Disminuye en 0.1 el nivel de riesgo de la persona
+		        	// NO SE SI ES LA MEJOR FORMA DE DISMINUIR EL RIESGO 
+		        	// TODO: ¡¡¡¡¡¡¡¡¡¡¡¡¡REVISAR!!!!!!!!!!!!!!!!!!!!
+		        	//
+		        	myself.prob_riesgo<-myself.prob_riesgo-0.1;
+	        	}
+	        }
+	    }
 	    if the_target = location {
 	        the_target <- nil ;
 	    }
     }
-    
     // reflex para actualizar el tipo de ruta a tomar según el nivel de riesgo asociado a la persona
     reflex actualizar_tipo_ruta{
     	if(prob_riesgo>0.5){
