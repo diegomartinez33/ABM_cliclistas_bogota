@@ -3,3 +3,11 @@ cycle: 1; siniestros_generados:0
 cycle: 2; siniestros_generados:0
 cycle: 3; siniestros_generados:0
 cycle: 4; siniestros_generados:0
+cycle: 5; siniestros_generados:0
+cycle: 6; siniestros_generados:0
+cycle: 7; siniestros_generados:0
+cycle: 8; siniestros_generados:0
+cycle: 9; siniestros_generados:0
+cycle: 10; siniestros_generados:0
+cycle: 11; siniestros_generados:0
+cycle: 12; siniestros_generados:0

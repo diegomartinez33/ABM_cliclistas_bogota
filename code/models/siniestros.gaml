@@ -15,14 +15,14 @@ global{
 	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
 	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
 	
-	int n_agentes<- 50;
+	int n_agentes<- 10;
 	geometry shape <- envelope(shapefile_zat);
-	float step <- 24 #h;
-	date starting_date <- date("2021-08-03-00-00-00");
-    float min_work_start <- 3#h;
-    float max_work_start <- 6#h;
-    float min_work_end <- 14#h; 
-    float max_work_end <- 17#h; 
+	float step <- 10#mn; //24 #h;
+	date starting_date <- date("2021-08-06-00-00-00");
+    int min_work_start <- 1;
+    int max_work_start <- 3; // TODO: No se porque a veces asigna tiempo de trabajo a las 8 si el máximo es 7
+    int min_work_end <- 16; 
+    int max_work_end <- 19; 
     float min_speed <- 1.0 #km / #h; // TODO: investigar velocidad de bicicleta reportada
     float max_speed <- 5.0 #km / #h; 
     graph the_graph;
@@ -51,9 +51,11 @@ global{
 		/*Inicialización de los agentes*/
 		create persona number: n_agentes{
 			speed <- rnd(min_speed, max_speed); //velocidad de movimiento
-		    start_work <- rnd (min_work_start, max_work_start); //hora de ir a trabajar
+		    //start_work <- rnd (min_work_start, max_work_start); //hora de ir a trabajar
+		    start_work <- rnd (0, 2);
 		    end_work <- rnd(min_work_end, max_work_end); //hora de salir de trabajar y volver a casa
 		    riesgo_indiv<-rnd(1.0);
+		    objective <- "resting";
 		    //Asignando tipo de selección de ruta
 		    if(prob_riesgo>0.5){
 		    	tipo_ruta<-"Rapida";
@@ -107,7 +109,7 @@ global{
 		    }
 		    location <- origen;
 		    //write "Agente:"+name+", zat_origen:"+zat_origen.nombre+", zat destino:"+zat_destino.nombre;
-		    write "Agente:"+name+", hora de inicio:"+start_work+", hora de fin:"+end_work;
+		    write ", hora de inicio:"+start_work+", hora de fin:"+end_work;
 		}
 		write "Termino inicializada de los agentes";
 	}
@@ -150,8 +152,8 @@ species persona skills: [moving]{
 	zat zat_origen;
 	zat zat_destino;
     point destino <- nil ;
-    float start_work max: max_work_start;
-    float end_work  max: max_work_end;
+    int start_work;
+    int end_work;
     string objective ; 
     point the_target <- nil ;
     float riesgo_indiv;
@@ -257,11 +259,11 @@ species persona skills: [moving]{
 
 /*Definición de la clase segmento y sus propiedades*/
 species segmento{
-	//rgb color<- #lightgray;
+	rgb color<- #lightgray;
 	float prob_siniestro<- rnd(1.0) max: 1.0; //Probabilidad de que suceda un siniestro
 	float indice_estres <- rnd(1.0) max: 1.0; //Índice sobre el que se calcula los pesos de la red
-	int colorValue <- int(255*(indice_estres)) update: int(255*(indice_estres));
-    rgb color <- rgb(min([255, colorValue]),0,max ([0, 255 - colorValue]))  update: rgb(min([255, colorValue]),0,max ([0, 255 - colorValue])) ;
+	//int colorValue <- int(255*(indice_estres)) update: int(255*(indice_estres));
+    //rgb color <- rgb(min([255, colorValue]),0,max ([0, 255 - colorValue]))  update: rgb(min([255, colorValue]),0,max ([0, 255 - colorValue])) ;
 	int num_siniestros;
 	aspect base {
     draw shape color: color  /*Dibujar la figura de los segmentos*/
