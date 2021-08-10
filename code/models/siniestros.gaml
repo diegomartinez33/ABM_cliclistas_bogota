@@ -18,9 +18,9 @@ global{
 	int n_agentes<- 10;
 	geometry shape <- envelope(shapefile_zat);
 	float step <- 10#mn; //24 #h;
-	date starting_date <- date("2021-08-06-00-00-00");
-    int min_work_start <- 1;
-    int max_work_start <- 3; // TODO: No se porque a veces asigna tiempo de trabajo a las 8 si el máximo es 7
+	date starting_date <- date("2021-08-06 05:00:00");
+    int min_work_start <- 5;
+    int max_work_start <- 7;
     int min_work_end <- 16; 
     int max_work_end <- 19; 
     float min_speed <- 1.0 #km / #h; // TODO: investigar velocidad de bicicleta reportada
@@ -30,6 +30,9 @@ global{
 	init{
 		/*Inicialización de las ZATs, los segmentos y la malla*/
 		//create segmento from: shapefile_mvi with: [indice_estres::read('indice_estres'), prob_siniestro::read('prob_siniestro')]{}
+		
+		//do pause;
+		
 		create segmento from:shapefile_mvi{
 			num_siniestros <- 0;
 		}
@@ -51,8 +54,7 @@ global{
 		/*Inicialización de los agentes*/
 		create persona number: n_agentes{
 			speed <- rnd(min_speed, max_speed); //velocidad de movimiento
-		    //start_work <- rnd (min_work_start, max_work_start); //hora de ir a trabajar
-		    start_work <- rnd (0, 2);
+		    start_work <- rnd (min_work_start, max_work_start); //hora de ir a trabajar
 		    end_work <- rnd(min_work_end, max_work_end); //hora de salir de trabajar y volver a casa
 		    riesgo_indiv<-rnd(1.0);
 		    objective <- "resting";
@@ -112,6 +114,7 @@ global{
 		    write ", hora de inicio:"+start_work+", hora de fin:"+end_work;
 		}
 		write "Termino inicializada de los agentes";
+		write starting_date;
 	}
 
 	reflex actualizar_malla{
@@ -284,7 +287,7 @@ experiment prueba1 type: gui {
 	parameter "Shapefile de las ZAT" var: shapefile_zat category: "GIS";
 	parameter "Número de agentes" var: n_agentes category: "People" ;
 	parameter "Earliest hour to start work" var: min_work_start category: "People" min: 2 max: 8;
-    parameter "Latest hour to start work" var: max_work_start category: "People" min: 8 max: 12;
+    parameter "Latest hour to start work" var: max_work_start category: "People" min: 5 max: 10;
     parameter "Earliest hour to end work" var: min_work_end category: "People" min: 12 max: 16;
     parameter "Latest hour to end work" var: max_work_end category: "People" min: 16 max: 23;
     parameter "minimal speed" var: min_speed category: "People" min: 0.1 #km/#h ;
