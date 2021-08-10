@@ -15,7 +15,7 @@ global{
 	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
 	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
 	
-	int n_agentes<- 10;
+	int n_agentes<- 100;
 	geometry shape <- envelope(shapefile_zat);
 	float step <- 10#mn; //24 #h;
 	date starting_date <- date("2021-08-06 05:00:00");
@@ -27,6 +27,7 @@ global{
     float max_speed <- 5.0 #km / #h; 
     graph the_graph;
     graph the_graph_with_stress;
+    int total_siniestros<-0;
 	init{
 		/*Inicialización de las ZATs, los segmentos y la malla*/
 		//create segmento from: shapefile_mvi with: [indice_estres::read('indice_estres'), prob_siniestro::read('prob_siniestro')]{}
@@ -128,7 +129,6 @@ global{
 	} 
 	
 	reflex save_result{
-		int total_siniestros<-0;
 		list<segmento> segmentos<- segmento;
 		loop i over: segmentos{
 			ask i{
@@ -297,6 +297,11 @@ experiment prueba1 type: gui {
 	    	species zat aspect: base;
 	        species segmento aspect: base ;
 	        species persona aspect:base;
+	    }
+	    display siniestros_chart {
+	    	chart "siniestros totales" type: series{
+	    		data "total_siniestros" value: total_siniestros color: #blue;
+	    	}
 	    }
 	}
 }
