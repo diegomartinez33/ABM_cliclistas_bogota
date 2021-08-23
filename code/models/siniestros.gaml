@@ -10,14 +10,14 @@ model siniestros
 /* Insert your model definition here */
 
 global{
-	file shapefile_mvi<-file("../includes/model_input/MVI2020/MVI2020.shp");
+	file shapefile_mvi<-file("../includes/model_input/MVI2020/MVI2020_siniestros2.shp");
 	file shapefile_zat<-file("../includes/model_input/ZONAS/zat_bog_filtrado.shp");
 	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
 	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
 	
-	int n_agentes<- 100;
+	int n_agentes<- 500;
 	geometry shape <- envelope(shapefile_zat);
-	float step <- 10#mn; //24 #h;
+	float step <- 1#h; //24 #h;
 	date starting_date <- date("2021-08-06 05:00:00");
     int min_work_start <- 5;
     int max_work_start <- 7;
@@ -28,16 +28,20 @@ global{
     graph the_graph;
     graph the_graph_with_stress;
     int total_siniestros<-0;
+    int total_flujo<-0;
+    float variacion_estres<-0.0001;
+    float variacion_segmento<-0.0001;
+    float ruido_blanco<-0.000005;
 	init{
 		/*Inicialización de las ZATs, los segmentos y la malla*/
 		//create segmento from: shapefile_mvi with: [indice_estres::read('indice_estres'), prob_siniestro::read('prob_siniestro')]{}
 		
 		//do pause;
 		
-		create segmento from:shapefile_mvi{
-			num_siniestros <- 0;
+		create segmento from: shapefile_mvi with: [ prob_siniestro::float(read('Probabilidad'))]{
+			indice_estres<-prob_siniestro;
+			prob_siniestro<-(prob_siniestro+rnd(ruido_blanco))*10;
 		}
-		//create segmento from: shapefile_mvi with: [indice_estres::read('indice_estres'), prob_siniestro::read('prob_siniestro')];
 		
 		//Calculando los pesos para cada segmento con base en el índice de seguridad o indice de estres
 		map<segmento,float> pesos_segmentos_estres<-segmento as_map(each::(each.indice_estres));
@@ -57,8 +61,16 @@ global{
 			speed <- rnd(min_speed, max_speed); //velocidad de movimiento
 		    start_work <- rnd (min_work_start, max_work_start); //hora de ir a trabajar
 		    end_work <- rnd(min_work_end, max_work_end); //hora de salir de trabajar y volver a casa
-		    riesgo_indiv<-rnd(1.0);
 		    objective <- "resting";
+		    //Asignando la probabilidad de riesgo inicial
+		    float aleatorio <-rnd(1.0);
+		    if(aleatorio<=0.39){
+		    	prob_riesgo<- rnd(0.6,0.8);
+		    }else if(aleatorio>0.39 and aleatorio<=0.8){
+		    	prob_riesgo<- rnd(0.4,0.6);
+		    }else{
+		    	prob_riesgo<- rnd(0.3,0.5);
+		    }
 		    //Asignando tipo de selección de ruta
 		    if(prob_riesgo>0.5){
 		    	tipo_ruta<-"Rapida";
@@ -112,43 +124,53 @@ global{
 		    }
 		    location <- origen;
 		    //write "Agente:"+name+", zat_origen:"+zat_origen.nombre+", zat destino:"+zat_destino.nombre;
-		    write ", hora de inicio:"+start_work+", hora de fin:"+end_work;
+		    //write ", hora de inicio:"+start_work+", hora de fin:"+end_work;
 		}
 		write "Termino inicializada de los agentes";
 		write starting_date;
 	}
 
 	reflex actualizar_malla{
-		write time;
+		//write time;
 		map<segmento,float> pesos_segmentos_estres<-segmento as_map(each::(each.indice_estres)); //Calculando los pesos para cada segmento con base en el índice de seguridad
 		the_graph_with_stress <- as_edge_graph(segmento) with_weights pesos_segmentos_estres;	//Creando la red con pesos
 	}
 	
-	reflex detener_simulacion when: cycle>25{ //Método para detener la simulación
+	reflex detener_simulacion when: cycle>8760{ //Método para detener la simulación
 		do pause;
 	} 
 	
 	reflex save_result{
+		/* 
 		list<segmento> segmentos<- segmento;
 		loop i over: segmentos{
 			ask i{
-				total_siniestros <- total_siniestros + num_siniestros;
+				total_siniestros <- total_siniestros + num_siniestros; //Siniestros totales por ciclo
+				total_flujo<-total_flujo + flujo_total; //Flujo de ciclistas por ciclo
 			}
 		}
-		write "Total de siniestros"+total_siniestros;
+		* */
+		//write "Total de siniestros"+total_siniestros;
+		total_siniestros<-total_siniestros+segmento sum_of each.num_siniestros;
 		
 	    save ("cycle: "+ cycle +
-	    	"; siniestros_generados:"+ total_siniestros
+	    	"; siniestros_generados:"+ segmento sum_of each.num_siniestros
 		) 
-	      to: "results_prueba2.txt" type: "text" rewrite: (cycle = 0) ? true : false;
+	      to: "prueba.txt" type: "text" rewrite: (cycle = 0) ? true : false;
+	    
+	    
+	    list<float> siniestros<- segmento collect each.num_siniestros;
+	    save ("cycle: "+ cycle +
+	    	"; siniestros_generados:"+ siniestros
+		) 
+	      to: "segmentos.txt" type: "text" rewrite: (cycle = 0) ? true : false;
 	}
-	
 	
 }
 
 /*Definición de la clase persona y sus propiedades*/
 species persona skills: [moving]{
-	float prob_riesgo<-rnd(1.0) max: 1.0;
+	float prob_riesgo max: 1.0;
 	string tipo_ruta;
 	rgb color<- #green;
 	point origen <- nil ;
@@ -159,55 +181,62 @@ species persona skills: [moving]{
     int end_work;
     string objective ; 
     point the_target <- nil ;
-    float riesgo_indiv;
+
     
     // reflex para indicar el momento de ir a trabajar segun la hora
     reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
-    	write "Hora de trabajar al objetivo:"+the_target;
+    	//write "Hora de trabajar al objetivo:"+the_target;
 	    objective <- "working" ;
 	    the_target <- any_location_in (zat_destino);
     }
     
     // reflex para indicar el momento de volver a casa segun la hora    
     reflex time_to_go_home when: current_date.hour = end_work and objective = "working"{
-    	write "Hora de volver al objetivo:"+the_target;
+    	//write "Hora de volver al objetivo:"+the_target;
 	    objective <- "resting" ;
 	    the_target <- origen; 
     } 
     
     // Movimiento de la persona segun el nivel de riesgo
     reflex move when: the_target != nil {
-    	graph selected_graph; //variable que define el tipo de grafo o ruta a usar segun el rieso 
-    	                      //asociado a la persona
-    	                      
+    	graph selected_graph; //variable que define el tipo de grafo o ruta a usar segun el rieso asociado a la persona
+    	
+    	//aleatorizando el proceso de eleeción de ruta
+    	if(rnd(1.0)>prob_riesgo){
+    		tipo_ruta<-"Rapida";
+    	}else{
+    		tipo_ruta<-"Segura";
+    	}
+    	
+    	//Asignando ruta y grafo a partir de la ruta elegida                     
     	if (tipo_ruta="Rapida"){
     		selected_graph <- the_graph;
-    		write "aca";
+    		//write "aca";
     	}
     	else {
     		selected_graph <- the_graph_with_stress;
-    		write "aca2";
+    		//write "aca2";
     	}
     	path path_followed <- goto(target: the_target, on:selected_graph, return_path: true);
     	list<geometry> segments <- path_followed.segments;
     	float aux_rnd_siniestro;
     	
     	loop line over: segments {
-    		write line;
-    		aux_rnd_siniestro <- rnd(1.0);
+    		//write line;
+    		aux_rnd_siniestro <- rnd(0.25);
 	        ask segmento(path_followed agent_from_geometry line) {
-	        	// Se cambia el nivel de estres del segmento si ocurre un siniestro 
-	        	write "Prob aleatoria:"+aux_rnd_siniestro+", prob segmento:"+prob_siniestro;
-	        	if (aux_rnd_siniestro>prob_siniestro){ 
-		        	indice_estres<-indice_estres+0.01;
+	        	// Se cambia el nivel de estres del segmento si ocurre un siniestro
+	        	flujo_total<-flujo_total+1; 
+	        	//write "Prob aleatoria:"+aux_rnd_siniestro+", prob segmento:"+prob_siniestro;
+	        	if (aux_rnd_siniestro<=prob_siniestro){ 
+		        	indice_estres<-indice_estres+variacion_segmento;
 		        	num_siniestros<-num_siniestros+1; //aumenta en 1 el No de siniestros
 		        	write "sucedio un siniestro";
 		        	
-		        	//Disminuye en 0.1 el nivel de riesgo de la persona
-		        	// NO SE SI ES LA MEJOR FORMA DE DISMINUIR EL RIESGO 
-		        	// TODO: ¡¡¡¡¡¡¡¡¡¡¡¡¡REVISAR!!!!!!!!!!!!!!!!!!!!
-		        	//
-		        	myself.prob_riesgo<-myself.prob_riesgo-0.1;
+		        	myself.prob_riesgo<-myself.prob_riesgo-variacion_estres;
+	        	}else{
+	        		indice_estres<-indice_estres-variacion_segmento;
+	        		myself.prob_riesgo<-myself.prob_riesgo+variacion_estres;
 	        	}
 	        }
 	    }
@@ -233,7 +262,7 @@ species persona skills: [moving]{
 	    }
     } 
     */
-    /* 
+     
     reflex actualizar_destino{
 		float prob_destino<-rnd(1.0);
 	    loop i from: 0 to: od_zats.rows-1{
@@ -254,7 +283,7 @@ species persona skills: [moving]{
 	    	}
     	} 
     }  
-    */
+    
 	aspect base {
 	draw circle(80) color: color border: #green; /*Dibujar la figura de los agentes*/
     }
@@ -263,11 +292,12 @@ species persona skills: [moving]{
 /*Definición de la clase segmento y sus propiedades*/
 species segmento{
 	rgb color<- #lightgray;
-	float prob_siniestro<- rnd(1.0) max: 1.0; //Probabilidad de que suceda un siniestro
-	float indice_estres <- rnd(1.0) max: 1.0; //Índice sobre el que se calcula los pesos de la red
+	float prob_siniestro max: 1.0; //Probabilidad de que suceda un siniestro
+	float indice_estres max: 1.0; //Índice sobre el que se calcula los pesos de la red
 	//int colorValue <- int(255*(indice_estres)) update: int(255*(indice_estres));
     //rgb color <- rgb(min([255, colorValue]),0,max ([0, 255 - colorValue]))  update: rgb(min([255, colorValue]),0,max ([0, 255 - colorValue])) ;
-	int num_siniestros;
+	int num_siniestros<-0;
+	int flujo_total<-0;
 	aspect base {
     draw shape color: color  /*Dibujar la figura de los segmentos*/
     width:1+indice_estres*0.05;
@@ -292,16 +322,40 @@ experiment prueba1 type: gui {
     parameter "Latest hour to end work" var: max_work_end category: "People" min: 16 max: 23;
     parameter "minimal speed" var: min_speed category: "People" min: 0.1 #km/#h ;
     parameter "maximal speed" var: max_speed category: "People" max: 10 #km/#h;
+    parameter "variacion al estres" var: variacion_estres category: "People" min:0.0  max: 0.025;
+    parameter "variacion al segmento" var: variacion_segmento category: "People" min:0.0  max: 0.025;
 	output {
+		/*
 	    display malla {
 	    	species zat aspect: base;
 	        species segmento aspect: base ;
 	        species persona aspect:base;
 	    }
+	    *  */
 	    display siniestros_chart {
 	    	chart "siniestros totales" type: series{
 	    		data "total_siniestros" value: total_siniestros color: #blue;
 	    	}
 	    }
 	}
+}
+
+experiment bache type: batch repeat: 5 keep_seed: false until: (cycle=8760){
+	
+	reflex save_result{
+		list<segmento> segmentos<- segmento;
+		loop i over: segmentos{
+			ask i{
+				total_siniestros <- total_siniestros + num_siniestros; //Siniestros totales por ciclo
+				total_flujo<-total_flujo + flujo_total; //Flujo de ciclistas por ciclo
+			}
+		}
+		write "Total de siniestros"+total_siniestros;
+		
+	    save ("cycle: "+ cycle +
+	    	"; siniestros_generados:"+ total_siniestros+"; flujo_generado:"+total_flujo
+		) 
+	      to: "bache1_"+variacion_estres+"_"+variacion_segmento+"_"+ruido_blanco+".txt" type: "text" rewrite: (cycle = 0) ? true : false;
+	}
+	
 }

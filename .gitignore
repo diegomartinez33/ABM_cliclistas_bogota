@@ -2,5 +2,8 @@
 .cache/
 .metadata/
 .built_in_models_1626361082931
+.built_in_models_1592879755000
 .gama_application_workspace
 .gama.epf
+code/includes/model_input/MVI2020/MVI2020_siniestros.dbf
+code/includes/model_input/MVI2020/MVI2020_siniestros2.dbf
