@@ -40,6 +40,7 @@ global{
 		
 		create segmento from: shapefile_mvi with: [ prob_siniestro::float(read('Probabilidad'))]{
 			indice_estres<-prob_siniestro;
+			//write prob_siniestro;
 			prob_siniestro<-(prob_siniestro+rnd(ruido_blanco))*10;
 		}
 		
