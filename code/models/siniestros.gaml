@@ -15,7 +15,7 @@ global{
 	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
 	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
 	
-	int n_agentes<- 500;
+	int n_agentes<- 10000;
 	geometry shape <- envelope(shapefile_zat);
 	float step <- 1#h; //24 #h;
 	date starting_date <- date("2021-08-06 05:00:00");
@@ -41,7 +41,7 @@ global{
 		create segmento from: shapefile_mvi with: [ prob_siniestro::float(read('Probabilidad'))]{
 			indice_estres<-prob_siniestro;
 			//write prob_siniestro;
-			prob_siniestro<-(prob_siniestro+rnd(ruido_blanco))*10;
+			prob_siniestro<-(prob_siniestro+rnd(ruido_blanco));
 		}
 		
 		//Calculando los pesos para cada segmento con base en el índice de seguridad o indice de estres
