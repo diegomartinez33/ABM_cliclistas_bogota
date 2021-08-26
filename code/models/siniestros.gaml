@@ -12,8 +12,8 @@ model siniestros
 global{
 	file shapefile_mvi<-file("../includes/model_input/MVI2020/MVI2020_siniestros2.shp");
 	file shapefile_zat<-file("../includes/model_input/ZONAS/zat_bog_filtrado.shp");
-	matrix od_zats<-matrix(file("../includes/model_input/matriz_od.csv"));
-	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen.csv"));
+	matrix od_zats<-matrix(file("../includes/model_input/matriz_od2.csv"));
+	matrix od_origen<-matrix(file("../includes/model_input/dist_zat_origen2.csv"));
 	
 	int n_agentes<- 10000;
 	geometry shape <- envelope(shapefile_zat);
