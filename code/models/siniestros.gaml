@@ -82,15 +82,15 @@ global{
 		    float prob_origen<-rnd(1.0);
 		    loop i from: 0 to: od_origen.rows-1{
 		    	if i = 0{
-		    		if prob_origen<=float(od_origen[3,i]){
-		    			list<zat> lista_zats<-zat where (each.nombre=string(od_origen[0,i]));
+		    		if prob_origen<=float(od_origen[4,i]){
+		    			list<zat> lista_zats<-zat where (each.nombre=string(od_origen[1,i]));
 		    			origen <- any_location_in (one_of(lista_zats)) ;
 		    			zat_origen<-one_of(lista_zats);
 		    			//write zat_origen.nombre;
 		    		}
 		    	}else{
-		    		if prob_origen>float(od_origen[3,i-1]) and prob_origen<=float(od_origen[3,i]) {
-		    			list<zat> lista_zats<-zat where (each.nombre=string(od_origen[0,i]));
+		    		if prob_origen>float(od_origen[4,i-1]) and prob_origen<=float(od_origen[4,i]) {
+		    			list<zat> lista_zats<-zat where (each.nombre=string(od_origen[1,i]));
 		    			origen <- any_location_in (one_of(lista_zats)) ;
 		    			zat_origen<-one_of(lista_zats);
 		    			//write zat_origen.nombre;
@@ -102,20 +102,20 @@ global{
 		    /*Asignando destino basado en ZAT de origen*/
 		    float prob_destino<-rnd(1.0);
 		    loop i from: 0 to: od_zats.rows-1{
-		    	if zat_origen.nombre=string(od_zats[1,i]){
+		    	if zat_origen.nombre=string(od_zats[2,i]){
 		    		//write "Origen:"+zat_origen.nombre+", destino:"+od_zats[1,i];
 		    		if i = 0{
 		    			//write "Probabilidad acum:"+float(od_zats[6,i]);
-			    		if prob_destino<=float(od_zats[6,i]){
-			    			list<zat> lista_zats<-zat where (each.nombre=string(od_zats[1,i]));
+			    		if prob_destino<=float(od_zats[7,i]){
+			    			list<zat> lista_zats<-zat where (each.nombre=string(od_zats[2,i]));
 			    			destino <- any_location_in (one_of(lista_zats)) ;
 			    			zat_destino<-one_of(lista_zats);
 			    			//write zat_destino.nombre;
 		    		}
 			    	}else{
 			    		//write "Probabilidad acum:"+float(od_zats[6,i]);
-			    		if prob_destino>float(od_zats[6,i-1]) and prob_destino<=float(od_zats[6,i]) {
-			    			list<zat> lista_zats<-zat where (each.nombre=string(od_zats[1,i]));
+			    		if prob_destino>float(od_zats[7,i-1]) and prob_destino<=float(od_zats[7,i]) {
+			    			list<zat> lista_zats<-zat where (each.nombre=string(od_zats[2,i]));
 			    			destino <- any_location_in (one_of(lista_zats)) ;
 			    			zat_destino<-one_of(lista_zats);
 			    			//write zat_destino.nombre;
@@ -224,7 +224,7 @@ species persona skills: [moving]{
     	
     	loop line over: segments {
     		//write line;
-    		aux_rnd_siniestro <- rnd(0.25);
+    		aux_rnd_siniestro <- rnd(1.0);
 	        ask segmento(path_followed agent_from_geometry line) {
 	        	// Se cambia el nivel de estres del segmento si ocurre un siniestro
 	        	flujo_total<-flujo_total+1; 
